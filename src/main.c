@@ -32,22 +32,43 @@ typedef struct ArgParser {
     char *      progName;           // Generated on parseArgs call
 } ArgParser;
 
-char * copyString(char *str)
+void freeString(char *str)
 {
     if (str == NULL)
-        return str;
+        return;
+
+    free(str);
+}
+
+void freeAllStrings(char **str, int length)
+{
+    if (str == NULL)
+        return;
+
+    for( int i = 0; i < length; i++) {
+        char *pCurr = str[i];
+        free(pCurr);
+    }
+
+    free(str);
+}
+
+char * copyString(const char *str)
+{
+    if (str == NULL)
+        return NULL;
 
     int strLen = strlen(str);
     char *pDest = malloc(sizeof(char)*strLen+1);
     strcpy(pDest, str);
 
-    return str;
+    return pDest;
 }
 
-char ** copyAllStrings(char **str, int length)
+char ** copyAllStrings(const char **str, int length)
 {
     if (str == NULL)
-        return str;
+        return NULL;
 
     char **ppDest = malloc(sizeof(char**) * length);
 
@@ -55,9 +76,8 @@ char ** copyAllStrings(char **str, int length)
         return NULL;
     }
 
-    int i = 0;
     for( int i = 0; i < length; i++) {
-        char *pCurr = str[i];
+        const char *pCurr = str[i];
         size_t currLen = strlen(pCurr);
         ppDest[i] = malloc(currLen + 1);
         strcpy(ppDest[i], str[i]);
@@ -90,7 +110,8 @@ void printUsageAndExit(ArgParser *argparser, int error) {
     exit(error);
 }
 
-void addOptionalArgument(ArgParser *argparser, char *name, char **shortHand, int numShort, char **longHand, int numLong, char * description)
+// TODO @ccs may return optional arg pointer, might be useful for things like mutual exclusion and such
+void addOptionalArgument(ArgParser *argparser, const char *name, const char **shortHand, int numShort, const char **longHand, int numLong, const char * description)
 {
     argparser->numOptions++;
     argparser->options = realloc(argparser->options, sizeof(OptArg)*argparser->numOptions);
@@ -117,7 +138,7 @@ void parseArgs(ArgParser *argparser, int argc, char *argv[]) {
     printUsageAndExit(argparser, 0);
 }
 
-void initialize_argparser(ArgParser *argparser) {
+void argparser_init(ArgParser *argparser) {
     // Placeholder allocations to use realloc when adding arguments
     argparser->options = calloc(0, sizeof(OptArg));
     argparser->args = calloc(0, sizeof(Arg));
@@ -126,8 +147,41 @@ void initialize_argparser(ArgParser *argparser) {
     argparser->numArgs = 0;
     argparser->progName = NULL;
 
-    char* shortHand[] = {"-v"};
+    const char* shortHand[] = {"-v"};
     addOptionalArgument(argparser, "version", shortHand, 1, NULL, 0, NULL);
+}
+
+void optarg_cleanup(OptArg *opt)
+{
+    free(opt->name);
+    free(opt->description);
+
+    freeAllStrings(opt->shortHand, opt->numShort);
+    freeAllStrings(opt->longHand, opt->numLong);
+}
+
+void arg_cleanup(Arg *arg)
+{
+   free(arg->name);
+   free(arg->description);
+}
+
+void argparser_shutdown(ArgParser *argparser)
+{
+    // Cleanup of all objects created
+    for(int i = 0; i < argparser->numOptions; i++)
+    {
+        optarg_cleanup(&argparser->options[i]);
+    }
+    free(argparser->options);
+
+    for(int i = 0; i < argparser->numArgs; i++)
+    {
+        arg_cleanup(&argparser->args[i]);
+    }
+    free(argparser->args);
+
+    freeString(argparser->progName);
 }
 
 
@@ -135,9 +189,12 @@ void initialize_argparser(ArgParser *argparser) {
 
 int main(int argc, char *argv[]) {
     ArgParser argparser;
-    initialize_argparser(&argparser);
+    argparser_init(&argparser);
     parseArgs(&argparser, argc, argv);
 
 
     printf("Hello, world!\n");
+
+
+    argparser_shutdown(&argparser);
 }
