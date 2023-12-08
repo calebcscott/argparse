@@ -5,10 +5,6 @@ project(argparse VERSION 0.1.0)
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 
 
+add_subdirectory(argparse)
 add_subdirectory(src)
 
-
-install(
-    TARGETS ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-    )
