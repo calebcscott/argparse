@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "argparse.h"
+#include <stdbool.h>
 
 
 void freeString(char *str)
@@ -58,7 +59,6 @@ char ** copyAllStrings(const char **str, int length)
     return ppDest;
 }
 
-void argparser_shutdown(ArgParser *);
 
 void printUsageAndExit(ArgParser *argparser, int error) {
     char fmtString[4096] = "Usage: %s";
@@ -85,9 +85,79 @@ void printUsageAndExit(ArgParser *argparser, int error) {
     exit(error);
 }
 
-// TODO @ccs may return optional arg pointer, might be useful for things like mutual exclusion and such
-void arparser_add_optional_arg(ArgParser *argparser, const char *name, const char **shortHand, int numShort, const char **longHand, int numLong, const char * description)
+
+void validateFlags( ARG_FLAGS *flags )
 {
+
+    bool isFlag = ( *flags & Arg_Flag ) != 0; 
+    bool isValue = ( *flags & Arg_Value ) != 0;
+
+
+    if ( isFlag && isValue )
+    {
+        return;
+    }
+
+    if ( isFlag )
+    {
+        bool validAction = ( (Arg_Action_Store_True | Arg_Action_Store_False) & *flags ) == 0
+            || (Arg_Action_Store_True & *flags) | (Arg_Action_Store_False & *flags) == 0;
+
+        if (!validAction)
+        {
+            *flags = (Arg_Flag | Arg_Action_Store_True );    
+        }
+
+        bool validValue = ( (Arg_Value_Int & *flags) | 
+                (Arg_Value_Double & *flags) | 
+                (Arg_Value_String  & *flags ) ) == 0;
+        if ( !validValue )
+        {
+            // Possible we didn't reset flags in previous step, need to make sure we clear out Value args
+            // but keep Any action flag set by user
+            *flags &= (Arg_Flag | Arg_Action_Store_True | Arg_Action_Store_False);    
+        }
+        return;
+    }
+
+    if ( isValue )
+    {
+        bool validAction = (Arg_Action_Store_True & *flags) | (Arg_Action_Store_False  & *flags ) == 0;
+
+        if (!validAction)
+        {
+            *flags &= ~(Arg_Action_Store_True | Arg_Action_Store_False );
+        }
+
+        // Bitwise and to pull out possible Arg_Value_* set in flags
+        int oneValueForArg = (Arg_Value_Int | Arg_Value_Double | Arg_Value_String ) & *flags;
+
+        // Test is Value is == 0 which means none or not a power of two which means more than one
+        // in either case we need to use default string
+        if ( oneValueForArg == 0 || (oneValueForArg & (oneValueForArg - 1)) != 0)
+        {
+            // rest value flags in return value
+            *flags &= ~(Arg_Value_Int | Arg_Value_Double | Arg_Value_String);
+            // Set default string flag
+            *flags |= Arg_Value_String;
+        }
+
+        return;
+
+    }
+
+    *flags = Arg_Value | Arg_Value_String;
+
+}
+
+// TODO @ccs may return optional arg pointer, might be useful for things like mutual exclusion and such
+void argparser_add_optional_arg(ArgParser *argparser, const char *name, 
+        const char **shortHand, int numShort, const char **longHand, 
+        int numLong, const char * description, ARG_FLAGS flags)
+{
+    if (argparser == NULL)
+        return;
+
     argparser->numOptions++;
     argparser->options = realloc(argparser->options, sizeof(OptArg)*argparser->numOptions);
 
@@ -101,20 +171,26 @@ void arparser_add_optional_arg(ArgParser *argparser, const char *name, const cha
     opt->numLong = numLong;
     opt->description = copyString(description);
 
+    validateFlags(&flags);
+    opt->flags = flags;
+   
 }
 
 
-void parseOptionalArgs(int *index, int argc, char ***retArgc)
+void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char ***retArgc)
 {
 }
 
 
-void parseArgs(int *index, int argc, char ***retArgc)
+void parseArgs(ArgParser *argparser, int *index, int argc, char ***retArgc)
 {
 }
 
 
 void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
+    if (argparser == NULL)
+        return;
+
     argparser->progName = copyString(argv[0]);
     
 
@@ -124,10 +200,10 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
 
     // pass triple pointer to allow parse optional arg to change which
     // value we are on
-    parseOptionalArgs(&index, argc, &tmpArgv);
+    parseOptionalArgs(argparser, &index, argc, &tmpArgv);
 
 
-    parseArgs(&index, argc, &tmpArgv);
+    parseArgs(argparser, &index, argc, &tmpArgv);
 
     if (index != argc)
     {
@@ -137,6 +213,8 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
 }
 
 void argparser_init(ArgParser *argparser) {
+    if (argparser == NULL)
+        return;
     // Placeholder allocations to use realloc when adding arguments
     argparser->options = calloc(0, sizeof(OptArg));
     argparser->args = calloc(0, sizeof(Arg));
@@ -146,7 +224,7 @@ void argparser_init(ArgParser *argparser) {
     argparser->progName = NULL;
 
     const char* shortHand[] = {"-v"};
-    arparser_add_optional_arg(argparser, "version", shortHand, 1, NULL, 0, NULL);
+    argparser_add_optional_arg(argparser, "version", shortHand, 1, NULL, 0, NULL, Arg_Flag | Arg_Action_Store_True);
 }
 
 void optargCleanup(OptArg *opt)
@@ -166,6 +244,9 @@ void argCleanup(Arg *arg)
 
 void argparser_shutdown(ArgParser *argparser)
 {
+    if (argparser == NULL)
+        return;
+
     // Cleanup of all objects created
     for(int i = 0; i < argparser->numOptions; i++)
     {
