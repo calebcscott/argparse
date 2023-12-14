@@ -1,0 +1,14 @@
+version: "3"
+
+tasks:
+  build:
+    desc: Build 
+    cmds:
+    - cmake -S . -B build
+    - cmake --build build
+
+  run:
+    desc: Run 
+    cmds:
+    - cmake --install build
+    - ./bin/argparse
