@@ -59,6 +59,48 @@ char ** copyAllStrings(const char **str, int length)
     return ppDest;
 }
 
+void printOptionsHelp(ArgParser *argparser)
+{
+    printf("OPTIONS:\n");
+
+    for (int i = 0; i < argparser->numOptions; i++)
+    {
+        char fmtString[4096] = "\t";
+        OptArg *arg = &argparser->options[i];
+        strcat(fmtString, arg->shortHand[0]);
+
+        
+        for(int j = 1; j < arg->numShort + arg->numLong; j++)
+        {
+            strcat(fmtString, "|");
+            if ( j < arg->numShort )
+            {
+                strcat(fmtString, arg->shortHand[j]);
+            }
+            else {
+                strcat(fmtString, arg->longHand[j - arg->numShort]);
+            }
+        }
+
+        if ( arg->flags & Arg_Flag == 0)
+        {
+            strcat(fmtString, "<");
+            strcat(fmtString, arg->name);
+            strcat(fmtString, ">");
+
+        }
+
+        if (arg->description != NULL && strlen(arg->description) > 0)
+        {
+            strcat(fmtString, "\t\t");
+            strcat(fmtString, arg->description);
+        }
+
+        printf("%s\n", fmtString);
+
+    }
+}
+
 
 void printUsageAndExit(ArgParser *argparser, int error) {
     char fmtString[4096] = "Usage: %s";
@@ -80,6 +122,8 @@ void printUsageAndExit(ArgParser *argparser, int error) {
 
     strcat(fmtString, "\n");
     printf(fmtString, argparser->progName);
+
+    printOptionsHelp(argparser);
 
     argparser_shutdown(argparser);
     exit(error);
