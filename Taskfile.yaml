@@ -11,4 +11,4 @@ tasks:
     desc: Run 
     cmds:
     - cmake --install build
-    - ./bin/argparse
+    - ./bin/main
