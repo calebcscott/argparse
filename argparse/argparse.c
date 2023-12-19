@@ -61,42 +61,46 @@ char ** copyAllStrings(const char **str, int length)
 
 void printOptionsHelp(ArgParser *argparser)
 {
+    if (argparser->numOptions == 0)
+        return;
+    
+
     printf("OPTIONS:\n");
 
+    char fmtString[4096] = "   %-20s %20s %s\n";
     for (int i = 0; i < argparser->numOptions; i++)
     {
-        char fmtString[4096] = "\t";
+        char optionFlagString[4096] = "";
+        char descriptionString[4096] = "";
         OptArg *arg = &argparser->options[i];
-        strcat(fmtString, arg->shortHand[0]);
+        strcat(optionFlagString, arg->shortHand[0]);
 
         
         for(int j = 1; j < arg->numShort + arg->numLong; j++)
         {
-            strcat(fmtString, "|");
+            strcat(optionFlagString, "|");
             if ( j < arg->numShort )
             {
-                strcat(fmtString, arg->shortHand[j]);
+                strcat(optionFlagString, arg->shortHand[j]);
             }
             else {
-                strcat(fmtString, arg->longHand[j - arg->numShort]);
+                strcat(optionFlagString, arg->longHand[j - arg->numShort]);
             }
         }
 
         if ( arg->flags & Arg_Flag == 0)
         {
-            strcat(fmtString, "<");
-            strcat(fmtString, arg->name);
-            strcat(fmtString, ">");
-
+            strcat(optionFlagString, "<");
+            strcat(optionFlagString, arg->name);
+            strcat(optionFlagString, ">");
         }
 
         if (arg->description != NULL && strlen(arg->description) > 0)
         {
-            strcat(fmtString, "\t\t");
-            strcat(fmtString, arg->description);
+            strcat(descriptionString, arg->description);
         }
 
-        printf("%s\n", fmtString);
+        printf(fmtString, optionFlagString, " ", descriptionString);
 
     }
 }
@@ -268,7 +272,9 @@ void argparser_init(ArgParser *argparser) {
     argparser->progName = NULL;
 
     const char* shortHand[] = {"-v"};
-    argparser_add_optional_arg(argparser, "version", shortHand, 1, NULL, 0, NULL, Arg_Flag | Arg_Action_Store_True);
+    argparser_add_optional_arg(argparser, "version", 
+                               shortHand, 1, NULL, 0, "print this usage text",
+                               Arg_Flag | Arg_Action_Store_True);
 }
 
 void optargCleanup(OptArg *opt)
