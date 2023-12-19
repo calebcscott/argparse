@@ -70,12 +70,12 @@ void printOptionsHelp(ArgParser *argparser)
     char fmtString[4096] = "   %-20s %20s %s\n";
     for (int i = 0; i < argparser->numOptions; i++)
     {
+        // do these even need 4K buffer sizes??
         char optionFlagString[4096] = "";
         char descriptionString[4096] = "";
         OptArg *arg = &argparser->options[i];
         strcat(optionFlagString, arg->shortHand[0]);
 
-        
         for(int j = 1; j < arg->numShort + arg->numLong; j++)
         {
             strcat(optionFlagString, "|");
@@ -101,7 +101,6 @@ void printOptionsHelp(ArgParser *argparser)
         }
 
         printf(fmtString, optionFlagString, " ", descriptionString);
-
     }
 }
 
@@ -225,13 +224,51 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
 }
 
 
-void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char ***retArgc)
+int checkForFlag(OptArg *arg, char *str)
 {
+    return 0;
+}
+
+void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char **retArgv[])
+{
+    printf("Entered parse optional args\n");
+    if (*index >= argc)
+        return;
+
+    
+    printf("Attempting to parse (%d) possible flag: %s\n", *index+1, (**retArgv));
+    
+    OptArg *arg;
+    for(int i = 0; i < argparser->numOptions; i++ )
+    {
+        arg = &argparser->options[i];
+
+        if ( checkForFlag(arg, **retArgv) )
+        {
+            break;
+        }
+
+        arg = NULL;
+    }
+
+    //if (arg == NULL)
+    //    return;
+
+    // Get data at index from retArgv
+    *index += 1;
+    // Change given pointer to look at next element in list
+    *retArgv = (*retArgv) + 1 ;
+
+
+    return parseOptionalArgs(argparser, index, argc, retArgv);
+
 }
 
 
-void parseArgs(ArgParser *argparser, int *index, int argc, char ***retArgc)
+void parseArgs(ArgParser *argparser, int *index, int argc, char ***retArgv)
 {
+    if (*index >= argc)
+        return;
 }
 
 
@@ -248,12 +285,12 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
 
     // pass triple pointer to allow parse optional arg to change which
     // value we are on
-    parseOptionalArgs(argparser, &index, argc, &tmpArgv);
+    parseOptionalArgs(argparser, &index, argc-1, &tmpArgv);
 
 
-    parseArgs(argparser, &index, argc, &tmpArgv);
+    parseArgs(argparser, &index, argc-1, &tmpArgv);
 
-    if (index != argc)
+    if (index != argc-1)
     {
         printUsageAndExit(argparser, 1);
     }
