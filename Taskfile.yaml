@@ -1,6 +1,14 @@
 version: "3"
 
 tasks:
+  debug:
+    desc: Debug
+    cmds:
+    - cmake -DCMAKE_BUILD_TYPE=Debug -S . -B build
+    - cmake --build build
+    - cmake --install build
+    - gdb ./bin/main
+
   build:
     desc: Build 
     cmds:
