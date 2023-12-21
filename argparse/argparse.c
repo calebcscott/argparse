@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
-#include "argparse.h"
 #include <stdbool.h>
+
+#include <stdarg.h>
+
+
+#include "argparse.h"
 
 
 void freeString(char *str)
@@ -132,6 +137,15 @@ void printUsageAndExit(ArgParser *argparser, int error) {
     exit(error);
 }
 
+void printError(ArgParser *argparser, int error, char *fmt, ...)
+{
+    va_list valist;
+    va_start(valist, fmt);
+    vprintf(fmt, valist);
+    va_end(valist);
+
+    printUsageAndExit(argparser, error);
+}
 
 void validateFlags( ARG_FLAGS *flags )
 {
@@ -223,9 +237,53 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
    
 }
 
+void setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
+{
+    if ( arg->flags & Arg_Flag )
+    {
+        arg->data = malloc(sizeof(int));
+        if (arg->flags & Arg_Action_Store_True)
+            *(int*)arg->data = 1;
+        else
+            *(int*)arg->data = 0;
+
+    }
+    else 
+    {
+        if ( arg->flags & Arg_Value_Int )
+        {
+            arg->data = malloc(sizeof(int));
+            char *end = NULL;
+            char *orig = data;
+            *(int*)arg->data = (int)strtol(data, &end, 10);
+
+            if (*end != '\0' && errno != 0)
+            {
+                printError(argparser, 2, "Invalid value provided for %s argument: %s\n", arg->name, orig);
+            }
+
+        }
+
+    }
+}
 
 int checkForFlag(OptArg *arg, char *str)
 {
+    for(int i = 0; i < arg->numShort + arg->numLong; i++)
+    {
+        if ( i < arg->numShort )
+        {
+            if (strcmp(str, arg->shortHand[0]) == 0)
+                return 1;
+        }
+        else
+        {
+            if (strcmp(str, arg->longHand[arg->numShort - i]) == 0)
+                return 1;
+        }
+
+    }
+
     return 0;
 }
 
@@ -245,14 +303,15 @@ void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char **retArg
 
         if ( checkForFlag(arg, **retArgv) )
         {
+            printf("Found opt arg with matching flag\n");
             break;
         }
 
         arg = NULL;
     }
 
-    //if (arg == NULL)
-    //    return;
+    if (arg == NULL)
+        return;
 
     // Get data at index from retArgv
     *index += 1;
@@ -292,7 +351,7 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
 
     if (index != argc-1)
     {
-        printUsageAndExit(argparser, 1);
+        printError(argparser, 1, "Invalid argument found: %s\n", *(tmpArgv));
     }
 
 }
