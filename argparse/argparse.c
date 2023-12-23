@@ -238,7 +238,7 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
    
 }
 
-void setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
+int setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
 {
     if ( arg->flags & Arg_Flag )
     {
@@ -248,9 +248,14 @@ void setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
         else
             *(int*)arg->data = 0;
 
+        return 0;
+
     }
     else 
     {
+        // Parse value type with corresponding function,
+        // probably easier to use scanf?, but wont know if string is invalid
+        // maybe if format string was life %d%s and if %s is NULL then we should be good?
         if ( arg->flags & Arg_Value_Int )
         {
             arg->data = malloc(sizeof(int));
@@ -265,7 +270,11 @@ void setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
 
         }
 
+        return 1;
+
     }
+
+    return 0;
 }
 
 int checkForFlag(OptArg *arg, char *str)
@@ -282,7 +291,6 @@ int checkForFlag(OptArg *arg, char *str)
             if (strcmp(str, arg->longHand[arg->numShort - i]) == 0)
                 return 1;
         }
-
     }
 
     return 0;
@@ -290,13 +298,9 @@ int checkForFlag(OptArg *arg, char *str)
 
 void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char **retArgv[])
 {
-    printf("Entered parse optional args\n");
     if (*index >= argc)
         return;
 
-    
-    printf("Attempting to parse (%d) possible flag: %s\n", *index+1, (**retArgv));
-    
     OptArg *arg;
     for(int i = 0; i < argparser->numOptions; i++ )
     {
@@ -304,7 +308,6 @@ void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char **retArg
 
         if ( checkForFlag(arg, **retArgv) )
         {
-            printf("Found opt arg with matching flag\n");
             break;
         }
 
@@ -314,14 +317,24 @@ void parseOptionalArgs(ArgParser *argparser, int *index, int argc, char **retArg
     if (arg == NULL)
         return;
 
+    if (arg->data != NULL)
+        printError(argparser, 1, "Provided '%s' argument more than once, see help for argument usage.\n", **retArgv);
+
     // Get data at index from retArgv
     *index += 1;
     // Change given pointer to look at next element in list
-    *retArgv = (*retArgv) + 1 ;
+    *retArgv = (*retArgv) + 1;
 
+    // If optional arg took value from list, increment to next argument string to parse
+    // Otherwise argument was flag thus not value taken from list
+    if ( setOptArgData(argparser, arg, **retArgv) )
+    {
+        *index += 1;
+        *retArgv = (*retArgv) + 1;
+
+    }
 
     return parseOptionalArgs(argparser, index, argc, retArgv);
-
 }
 
 
