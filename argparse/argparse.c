@@ -234,6 +234,7 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
 
     validateFlags(&flags);
     opt->flags = flags;
+    opt->data = NULL;
    
 }
 
@@ -380,6 +381,8 @@ void optargCleanup(OptArg *opt)
 
     freeAllStrings(opt->shortHand, opt->numShort);
     freeAllStrings(opt->longHand, opt->numLong);
+
+    free(opt->data);
 }
 
 void argCleanup(Arg *arg)
