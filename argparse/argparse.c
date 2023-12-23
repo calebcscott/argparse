@@ -222,6 +222,7 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
     argparser->numOptions++;
     argparser->options = realloc(argparser->options, sizeof(OptArg)*argparser->numOptions);
 
+
     // Get pointer for newly created optional arg
     //OptArg *opt = argparser->options + (argparser->numOptions - 1);
     OptArg *opt = &argparser->options[argparser->numOptions - 1];    
@@ -368,6 +369,12 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
         printError(argparser, 1, "Invalid argument found: %s\n", *(tmpArgv));
     }
 
+    // Help/Version is always first option
+    if (argparser->options->data != NULL )
+    {
+        printUsageAndExit(argparser, 0);
+    }
+
 }
 
 void argparser_init(ArgParser *argparser) {
@@ -386,7 +393,6 @@ void argparser_init(ArgParser *argparser) {
     argparser_add_optional_arg(argparser, "help/version", 
                                shortHand, 2, longHand, 2, "Print this usage text and version",
                                Arg_Flag | Arg_Action_Store_True);
-
 }
 
 void optargCleanup(OptArg *opt)
