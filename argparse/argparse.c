@@ -283,12 +283,12 @@ int checkForFlag(OptArg *arg, char *str)
     {
         if ( i < arg->numShort )
         {
-            if (strcmp(str, arg->shortHand[0]) == 0)
+            if (strcmp(str, arg->shortHand[i]) == 0)
                 return 1;
         }
         else
         {
-            if (strcmp(str, arg->longHand[arg->numShort - i]) == 0)
+            if (strcmp(str, arg->longHand[i - arg->numShort]) == 0)
                 return 1;
         }
     }
@@ -381,10 +381,12 @@ void argparser_init(ArgParser *argparser) {
     argparser->numArgs = 0;
     argparser->progName = NULL;
 
-    const char* shortHand[] = {"-v"};
-    argparser_add_optional_arg(argparser, "version", 
-                               shortHand, 1, NULL, 0, "print this usage text",
+    const char* shortHand[] = {"-v", "-h"};
+    const char* longHand[] = {"--version", "--help"};
+    argparser_add_optional_arg(argparser, "help/version", 
+                               shortHand, 2, longHand, 2, "Print this usage text and version",
                                Arg_Flag | Arg_Action_Store_True);
+
 }
 
 void optargCleanup(OptArg *opt)
