@@ -237,6 +237,13 @@ void validateFlags( ARG_FLAGS *flags , ARG_FLAGS invalid_flags)
 
 }
 
+
+void argparser_add_arg(ArgParser *argparser, const char *name, const char *desc,
+                       int position, ARG_FLAGS flags)
+{
+
+}
+
 // TODO @ccs may return optional arg pointer, might be useful for things like mutual exclusion and such
 void argparser_add_optional_arg(ArgParser *argparser, const char *name, 
         const char **shortHand, int numShort, const char **longHand, 
