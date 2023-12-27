@@ -72,12 +72,15 @@ void printOptionsHelp(ArgParser *argparser)
 
     printf("OPTIONS:\n");
 
-    char fmtString[4096] = "   %-20s %20s %s\n";
+    const char defaultFmtString[] = "%4s%-30s %20s %s\n";
     for (int i = 0; i < argparser->numOptions; i++)
     {
         // do these even need 4K buffer sizes??
-        char optionFlagString[4096] = "";
+        char optionFlagString[1024] = "";
+        // maybe devise way to add new lines if reach 80 char limit(?)
+        // will need to add necessary spacing
         char descriptionString[4096] = "";
+        char fmtString[4096];
         OptArg *arg = &argparser->options[i];
         strcat(optionFlagString, arg->shortHand[0]);
 
@@ -105,7 +108,22 @@ void printOptionsHelp(ArgParser *argparser)
             strcat(descriptionString, arg->description);
         }
 
-        printf(fmtString, optionFlagString, " ", descriptionString);
+        int flagLen = strlen(optionFlagString);
+
+        if ( flagLen > 30 && flagLen < 50 )
+        {
+            int leftoverLen = 20 - ( flagLen - 30);
+            snprintf(fmtString, 4095, "%%4s%%-%ds %%%ds %%s\n", flagLen, leftoverLen );
+        }
+        else if ( flagLen > 50 )
+        {
+            snprintf(fmtString, 4095, "%%4s%%-30s %%s %%s\n");
+        }
+        else {
+            snprintf(fmtString, 4095, "%s", defaultFmtString);
+        }
+
+        printf(fmtString, " ", optionFlagString, " ", descriptionString);
     }
 }
 
