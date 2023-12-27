@@ -165,17 +165,25 @@ void printError(ArgParser *argparser, int error, char *fmt, ...)
     printUsageAndExit(argparser, error);
 }
 
-void validateFlags( ARG_FLAGS *flags )
+void validateFlags( ARG_FLAGS *flags , ARG_FLAGS invalid_flags)
 {
 
     bool isFlag = ( *flags & Arg_Flag ) != 0; 
     bool isValue = ( *flags & Arg_Value ) != 0;
 
 
+    // Maybe just straight fail?? Or panic??
     if ( isFlag && isValue )
     {
-        return;
+        *flags = Arg_None;
     }
+
+    if ( *flags & invalid_flags != 0)
+    {
+        *flags = Arg_None;
+    }
+
+    
 
     if ( isFlag )
     {
@@ -251,7 +259,7 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
     opt->numLong = numLong;
     opt->description = copyString(description);
 
-    validateFlags(&flags);
+    validateFlags(&flags, Arg_None);
     opt->flags = flags;
     opt->data = NULL;
    
