@@ -272,6 +272,11 @@ int setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
     }
     else 
     {
+        if ( data == NULL )
+        {
+            // Possibly reached end of argv so break out
+            printError(argparser, 2, "No value provided for %s argument\n", arg->name);
+        }
         // Parse value type with corresponding function,
         // probably easier to use scanf?, but wont know if string is invalid
         // maybe if format string was life %d%s and if %s is NULL then we should be good?
@@ -280,13 +285,13 @@ int setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
             arg->data = malloc(sizeof(int));
             char *end = NULL;
             char *orig = data;
-            *(int*)arg->data = (int)strtol(data, &end, 10);
+            *(int*)arg->data = (int)strtol(orig, &end, 10);
 
-            if (*end != '\0' && errno != 0)
+            if ( orig == end || *end != '\0' )
             {
                 printError(argparser, 2, "Invalid value provided for %s argument: %s\n", arg->name, orig);
+                return 0;
             }
-
         }
 
         return 1;
