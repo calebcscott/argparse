@@ -449,7 +449,16 @@ OptArg* getOptArg(ArgParser *argparser, const char *arg_name) {
     return arg;
 }
 
-bool assign_data(void *inData, void *outData, ARG_FLAGS flags) {
+/**
+*  separate procedure for checking flags to not clutter main get data func
+*   use memcpy to give the caller the data rather than just a ref, this way
+*   if user calls shutdown they will still have access to values.
+*
+*   this does incur a double allocation for the same data, but ¯\_(ツ)_/¯
+*/
+bool assignData(void *inData, void *outData, ARG_FLAGS flags) {
+    // quick check to see if data is available
+    // may change to check a found flag if implemented
     if (inData == NULL || outData == NULL)
         return false;
 
@@ -472,8 +481,6 @@ bool assign_data(void *inData, void *outData, ARG_FLAGS flags) {
 
     }
 
-
-
     return true;
 }
 
@@ -482,12 +489,13 @@ int argparser_get_data(ArgParser *argparser, const char *arg_name, void *data) {
         return false;
 
     void *arg;
+    // Check if provided arg name is opt arg or positional, then copy out data
     if ( (arg = (void*)getOptArg(argparser, arg_name) ) != NULL 
-        && assign_data( ((OptArg*)arg)->data, data, ((OptArg*)arg)->flags) ) {;
+        && assignData( ((OptArg*)arg)->data, data, ((OptArg*)arg)->flags) ) {;
         return true;
     }
     else if ( (arg = (void*)getArg(argparser, arg_name) ) != NULL
-                && assign_data( ((Arg*)arg)->data, data, ((Arg*)arg)->flags) ) {
+                && assignData( ((Arg*)arg)->data, data, ((Arg*)arg)->flags) ) {
         return true;
     }
 
