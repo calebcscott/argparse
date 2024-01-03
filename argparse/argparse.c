@@ -183,14 +183,12 @@ void validateFlags( ARG_FLAGS *flags , ARG_FLAGS invalid_flags)
         *flags = Arg_None;
     }
 
-    
-
     if ( isFlag )
     {
-        bool validAction = ( (Arg_Action_Store_True | Arg_Action_Store_False) & *flags ) == 0
-            || (Arg_Action_Store_True & *flags) | (Arg_Action_Store_False & *flags) == 0;
+        bool inValidAction = ( (Arg_Action_Store_True | Arg_Action_Store_False) & *flags ) == 0
+            && ( (Arg_Action_Store_True & *flags) | (Arg_Action_Store_False & *flags) ) == 0;
 
-        if (!validAction)
+        if (inValidAction )
         {
             *flags = (Arg_Flag | Arg_Action_Store_True );    
         }
@@ -316,7 +314,7 @@ int setOptArgData(ArgParser *argparser, OptArg *arg, char *data)
     return 0;
 }
 
-int checkForFlag(OptArg *arg, char *str)
+int checkForFlag(OptArg *arg, const char *str)
 {
     for(int i = 0; i < arg->numShort + arg->numLong; i++)
     {
