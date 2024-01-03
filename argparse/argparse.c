@@ -413,6 +413,86 @@ void argparser_parse(ArgParser *argparser, int argc, char *argv[]) {
 
 }
 
+
+Arg* getArg(ArgParser *argparser, const char *arg_name) {
+    Arg *arg = NULL;
+    for(int i = 0; i < argparser->numArgs; i++ )
+    {
+        arg = &argparser->args[i];
+
+        if ( strcmp(arg->name, arg_name) == 0 )
+        {
+            break;
+        }
+
+        arg = NULL;
+    }
+
+    return arg;
+}
+
+OptArg* getOptArg(ArgParser *argparser, const char *arg_name) {
+    OptArg *arg = NULL;
+    for(int i = 0; i < argparser->numOptions; i++ )
+    {
+        arg = &argparser->options[i];
+
+        if ( strcmp(arg->name, arg_name) == 0 )
+        {
+            break;
+        }
+
+        arg = NULL;
+    }
+
+
+    return arg;
+}
+
+bool assign_data(void *inData, void *outData, ARG_FLAGS flags) {
+    if (inData == NULL || outData == NULL)
+        return false;
+
+    bool isFlag = ( flags & Arg_Flag ) != 0; 
+    bool isValue = ( flags & Arg_Value ) != 0;
+
+    if ( isFlag )
+    {
+        memcpy(outData, inData, sizeof(int));
+    }
+
+    if ( isValue )
+    {
+        if ( flags & Arg_Value_Int )
+        {
+            memcpy(outData, inData, sizeof(int));
+        }
+
+        //TODO: implement rest of values
+
+    }
+
+
+
+    return true;
+}
+
+int argparser_get_data(ArgParser *argparser, const char *arg_name, void *data) {
+    if (argparser == NULL)
+        return false;
+
+    void *arg;
+    if ( (arg = (void*)getOptArg(argparser, arg_name) ) != NULL 
+        && assign_data( ((OptArg*)arg)->data, data, ((OptArg*)arg)->flags) ) {;
+        return true;
+    }
+    else if ( (arg = (void*)getArg(argparser, arg_name) ) != NULL
+                && assign_data( ((Arg*)arg)->data, data, ((Arg*)arg)->flags) ) {
+        return true;
+    }
+
+    return false;
+}
 void argparser_init(ArgParser *argparser) {
     if (argparser == NULL)
         return;

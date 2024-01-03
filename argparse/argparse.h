@@ -70,5 +70,6 @@ void argparser_add_optional_arg(ArgParser *argparser, const char *name,
 // pass in environment to parse
 void argparser_parse(ArgParser *argparser, int argc, char *argv[]);
 
+int argparser_get_data(ArgParser *argparser, const char *arg_name, void *data);
 
 #endif

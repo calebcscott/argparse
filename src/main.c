@@ -21,6 +21,15 @@ int main(int argc, char *argv[]) {
     argparser_parse(&argparser, argc, argv);
     printf("Hello, world!\n");
 
+    int long_flag = 0;
+    int int_value = 0;
+
+    argparser_get_data(&argparser, "long", (void*)&long_flag);
+    argparser_get_data(&argparser, "int", (void*)&int_value);
+
+
+    printf("Got the values: %d, %d\n", long_flag, int_value);
+
 
     argparser_shutdown(&argparser);
 }
