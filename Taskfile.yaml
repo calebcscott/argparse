@@ -12,11 +12,19 @@ tasks:
   build:
     desc: Build 
     cmds:
-    - cmake -S . -B build
+    - cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
     - cmake --build build
 
   run:
     desc: Run 
     cmds:
+    - task: build
     - cmake --install build
     - ./bin/main
+
+  test:
+    desc: Build/Run tests
+    dir: ./build
+    cmds:
+      - task: build
+      - ctest
