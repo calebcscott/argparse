@@ -96,7 +96,7 @@ void printOptionsHelp(ArgParser *argparser)
             }
         }
 
-        if ( arg->flags & Arg_Flag == 0)
+        if ( (arg->flags & Arg_Flag ) == 0)
         {
             strcat(optionFlagString, "<");
             strcat(optionFlagString, arg->name);
@@ -178,7 +178,7 @@ void validateFlags( ARG_FLAGS *flags , ARG_FLAGS invalid_flags)
         *flags = Arg_None;
     }
 
-    if ( *flags & invalid_flags != 0)
+    if ( (*flags & invalid_flags) != 0)
     {
         *flags = Arg_None;
     }
@@ -207,7 +207,7 @@ void validateFlags( ARG_FLAGS *flags , ARG_FLAGS invalid_flags)
 
     if ( isValue )
     {
-        bool validAction = (Arg_Action_Store_True & *flags) | (Arg_Action_Store_False  & *flags ) == 0;
+        bool validAction = ((Arg_Action_Store_True & *flags) | (Arg_Action_Store_False  & *flags )) == 0;
 
         if (!validAction)
         {
