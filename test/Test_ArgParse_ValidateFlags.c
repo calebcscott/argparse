@@ -11,8 +11,9 @@ const char *passed_str = "PASSED";
 const char *failed_str = "FAILED";
 
 // Probably better as a macro??
-bool printMsgAndRetEval(const char *msg, bool eval) {
+bool printMsgAndRetEval(const char *msg, bool eval ) {
 	fprintf(stderr, "%-50s %20s\n", msg, eval ? passed_str : failed_str );
+
 	return eval;
 }
 
@@ -22,16 +23,30 @@ bool TestSimpleFlagCheck() {
 
 	validateFlags(&t, 0);
 
-	return printMsgAndRetEval("Test simple flag w/ no invalid flags", f == t);
+	bool eval = printMsgAndRetEval("Test simple flag w/ no invalid flags", f == t);
+
+	if (!eval)
+	{
+		fprintf(stderr, "\texpected %d ; got %d\n", f, t);
+	}
+
+	return eval;
 }
 
 bool TestNoFlagsProvided() {
-	ARG_FLAGS f = Arg_Flag | Arg_Action_Store_True;
+	ARG_FLAGS f = Arg_Value | Arg_Value_String;
 	ARG_FLAGS t = Arg_None;
 
 	validateFlags(&t, 0);
 
-	return printMsgAndRetEval("Test no flag provided", f == t);
+	bool eval = printMsgAndRetEval("Test no flag provided", f == t);
+
+	if (!eval)
+	{
+		fprintf(stderr, "\texpected %d ; got %d\n", f, t);
+	}
+
+	return eval;
 }
 
 
